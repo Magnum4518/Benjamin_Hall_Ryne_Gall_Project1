@@ -212,23 +212,49 @@ public:
         // PAWN
         if (p.type == 'P') {
             int dir = (p.color == WHITE) ? -1 : 1;
-            if (dy == 0 && target.type == ' ' && dx == dir) {}
-            else if (dy == 0 && sx == (p.color == WHITE ? 6 : 1) && dx == 2 * dir && board[sx + dir][sy].type == ' ' && target.type == ' ') {
-                enPassantTarget = {sx + dir, sy};
+
+            // Standard single forward move
+            if (dy == 0 && dx == dir && target.type == ' ') {
+                board[ex][ey] = p;
+                board[sx][sy] = Piece();
             }
-            else if (abs(dy) == 1 && dx == dir && (target.color == (p.color == WHITE ? BLACK : WHITE) || (ex == enPassantTarget.first && ey == enPassantTarget.second))) {
-                if (ex == enPassantTarget.first && ey == enPassantTarget.second)
-                    board[sx][ey] = Piece(); // capture en passant
+
+            // Double forward move
+            else if (dy == 0 && dx == 2 * dir && sx == (p.color == WHITE ? 6 : 1) &&
+                     board[sx + dir][sy].type == ' ' && target.type == ' ') {
+                board[ex][ey] = p;
+                board[sx][sy] = Piece();
+                enPassantTarget = {sx + dir, sy};  // Mark en passant square
+                     }
+
+            // Standard diagonal capture
+            else if (abs(dy) == 1 && dx == dir && target.color == (p.color == WHITE ? BLACK : WHITE)) {
+                board[ex][ey] = p;
+                board[sx][sy] = Piece();
             }
-            else return false;
+
+            // En passant capture
+            else if (abs(dy) == 1 && dx == dir && ex == enPassantTarget.first && ey == enPassantTarget.second) {
+                board[ex][ey] = p;
+                board[sx][sy] = Piece();
+                board[sx][ey] = Piece();  // Remove captured pawn
+            }
+
+            else {
+                return false;  // Invalid pawn move
+            }
 
             // Promotion
             if (ex == 0 || ex == 7) {
                 char promote;
                 cout << "Promote to (Q, R, B, N): ";
                 cin >> promote;
-                p.type = toupper(promote);
+                board[ex][ey].type = toupper(promote);
             }
+
+            enPassantTarget = {-1, -1};
+            board[ex][ey].hasMoved = true;
+            return true;
         }
 
         // KNIGHT
@@ -364,12 +390,12 @@ int main() {
         chessboard.display();
         if (chessboard.isCheckmate(turn))
         {
-            cout << (turn == WHITE ? "White" : "Black") << " is in checkmate! Game over.\n";
+            cout << "C H E C K M A T E " << (turn == WHITE ? "...Black" : "...White") << " wins.\n";
             break;
         }
         if (chessboard.isStalemate(turn))
         {
-            cout << "Stalemate! Game over.\n";
+            cout << "S T A L E M A T E ...Game over.\n";
             break;
         }
         cout << (turn == WHITE ? "[ ] White" : "( ) Black") << " to move (e.g., E2 E4): ";
@@ -390,6 +416,7 @@ int main() {
             turn = (turn == WHITE ? BLACK : WHITE);
 
         }
+
     }
     return 0;
 }
