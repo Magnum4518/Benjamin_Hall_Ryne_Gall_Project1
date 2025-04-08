@@ -17,10 +17,11 @@ struct Piece {
 
 class Board {
     vector<vector<Piece>> board;
-    pair<int, int> enPassantTarget;
+    pair<int, int> enPassantSquare;  // Track the en passant square (row, col)
+    Color enPassantColor;  // The color that can perform the en passant
 
 public:
-    Board() : board(8, vector<Piece>(8)), enPassantTarget(-1, -1) {
+    Board() : board(8, vector<Piece>(8)) {
         setupBoard();
     }
 
@@ -71,47 +72,40 @@ public:
         }
 
         // KNIGHT
-        else if (p.type == 'N')
-            {
+        else if (p.type == 'N') {
             if ((abs(sx - ex) == 2 && abs(sy - ey) == 1) || (abs(sx - ex) == 1 && abs(sy - ey) == 2)) {
                 return true; // Knight's L-shaped move
             }
         }
 
         // KING
-        else if (p.type == 'K')
-            {
-            if (abs(sx - ex) <= 1 && abs(sy - ey) <= 1)
-                {
+        else if (p.type == 'K') {
+            if (abs(sx - ex) <= 1 && abs(sy - ey) <= 1) {
                 return true; // King moves one square in any direction
             }
         }
 
         // ROOK
-        else if (p.type == 'R')
-            {
+        else if (p.type == 'R') {
             if (sx != ex && sy != ey) return false;  // Rooks move only in straight lines
 
             int stepX = (ex > sx) ? 1 : (ex < sx) ? -1 : 0;
             int stepY = (ey > sy) ? 1 : (ey < sy) ? -1 : 0;
 
-            for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY)
-                {
+            for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY) {
                 if (board[x][y].type != ' ') return false;  // Blocked by another piece
             }
             return true;
         }
 
         // BISHOP
-        else if (p.type == 'B')
-            {
+        else if (p.type == 'B') {
             if (abs(sx - ex) != abs(sy - ey)) return false;  // Bishops move diagonally
 
             int stepX = (ex > sx) ? 1 : (ex < sx) ? -1 : 0;
             int stepY = (ey > sy) ? 1 : (ey < sy) ? -1 : 0;
 
-            for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY)
-                {
+            for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY) {
                 if (board[x][y].type != ' ') return false;  // Blocked by another piece
             }
             return true;
@@ -119,25 +113,21 @@ public:
 
         // QUEEN
         else if (p.type == 'Q') {
-            if (sx == ex || sy == ey)
-                {
+            if (sx == ex || sy == ey) {
                 // Horizontal or vertical movement like rook
                 int stepX = (ex > sx) ? 1 : (ex < sx) ? -1 : 0;
                 int stepY = (ey > sy) ? 1 : (ey < sy) ? -1 : 0;
 
-                for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY)
-                    {
+                for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY) {
                     if (board[x][y].type != ' ') return false;  // Blocked by another piece
                 }
                 return true;
-            } else if (abs(sx - ex) == abs(sy - ey))
-                {
+            } else if (abs(sx - ex) == abs(sy - ey)) {
                 // Diagonal movement like bishop
                 int stepX = (ex > sx) ? 1 : (ex < sx) ? -1 : 0;
                 int stepY = (ey > sy) ? 1 : (ey < sy) ? -1 : 0;
 
-                for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY)
-                    {
+                for (int x = sx + stepX, y = sy + stepY; x != ex || y != ey; x += stepX, y += stepY) {
                     if (board[x][y].type != ' ') return false;  // Blocked by another piece
                 }
                 return true;
@@ -147,16 +137,12 @@ public:
         return false; // Default return value
     }
 
-    bool isCheck(Color turn)
-    {
+    bool isCheck(Color turn) {
         // Find the current player's king
         pair<int, int> kingPos;
-        for (int i = 0; i < 8; ++i)
-            {
-            for (int j = 0; j < 8; ++j)
-                {
-                if (board[i][j].type == 'K' && board[i][j].color == turn)
-                    {
+        for (int i = 0; i < 8; ++i) {
+            for (int j = 0; j < 8; ++j) {
+                if (board[i][j].type == 'K' && board[i][j].color == turn) {
                     kingPos = {i, j};
                     break;
                 }
@@ -164,16 +150,12 @@ public:
         }
 
         // Check if any opposing piece can attack the king
-        for (int i = 0; i < 8; ++i)
-            {
-            for (int j = 0; j < 8; ++j)
-                {
+        for (int i = 0; i < 8; ++i) {
+            for (int j = 0; j < 8; ++j) {
                 Piece &p = board[i][j];
-                if (p.color == (turn == WHITE ? BLACK : WHITE))
-                {
+                if (p.color == (turn == WHITE ? BLACK : WHITE)) {
                     // Try every possible move of the piece and check if it can reach the king
-                    if (canPieceAttack(i, j, kingPos.first, kingPos.second, p))
-                    {
+                    if (canPieceAttack(i, j, kingPos.first, kingPos.second, p)) {
                         return true;
                     }
                 }
@@ -183,29 +165,39 @@ public:
         return false;
     }
 
-
-    bool movePiece(int sx, int sy, int ex, int ey, Color turn)
-    {
+    bool movePiece(int sx, int sy, int ex, int ey, Color turn) {
         Piece &p = board[sx][sy];
         if (p.color != turn) return false;
 
         Piece &target = board[ex][ey];
         int dx = ex - sx, dy = ey - sy;
 
+        // En Passant logic: check if en passant capture is possible
+        if (p.type == 'P' && abs(sy - ey) == 1 && abs(sx - ex) == 1 && target.type == ' ') {
+            // Check if the move is a valid en passant
+            if (ex == enPassantSquare.first && ey == enPassantSquare.second &&
+                target.color == enPassantColor) {
+                // Perform en passant capture
+                board[ex][ey] = p;  // Move the pawn
+                board[sx][sy] = Piece();  // Remove the original pawn
+                board[ex - (turn == WHITE ? -1 : 1)][ey] = Piece();  // Remove the captured pawn
+                enPassantSquare = {-1, -1};  // Reset en passant
+                enPassantColor = NONE;  // Reset en passant color
+                return true;  // Successful en passant move
+                }
+        }
+
         // Check if the move puts the king in check
         Board tempBoard = *this;
         tempBoard.board[ex][ey] = p;
         tempBoard.board[sx][sy] = Piece();
-        if (tempBoard.isCheck(turn))
-        {
+        if (tempBoard.isCheck(turn)) {
             return false;  // Move would put the king in check
         }
-        if (!isInsideBoard(ex, ey))
-        {
+        if (!isInsideBoard(ex, ey)) {
             return false;
         }
-        if (target.color == turn)
-        {
+        if (target.color == turn) {
             return false;
         }
 
@@ -224,20 +216,12 @@ public:
                      board[sx + dir][sy].type == ' ' && target.type == ' ') {
                 board[ex][ey] = p;
                 board[sx][sy] = Piece();
-                enPassantTarget = {sx + dir, sy};  // Mark en passant square
-                     }
+            }
 
             // Standard diagonal capture
             else if (abs(dy) == 1 && dx == dir && target.color == (p.color == WHITE ? BLACK : WHITE)) {
                 board[ex][ey] = p;
                 board[sx][sy] = Piece();
-            }
-
-            // En passant capture
-            else if (abs(dy) == 1 && dx == dir && ex == enPassantTarget.first && ey == enPassantTarget.second) {
-                board[ex][ey] = p;
-                board[sx][sy] = Piece();
-                board[sx][ey] = Piece();  // Remove captured pawn
             }
 
             else {
@@ -252,7 +236,6 @@ public:
                 board[ex][ey].type = toupper(promote);
             }
 
-            enPassantTarget = {-1, -1};
             board[ex][ey].hasMoved = true;
             return true;
         }
@@ -317,7 +300,6 @@ public:
         board[ex][ey] = p;
         board[ex][ey].hasMoved = true;
         board[sx][sy] = Piece();
-        enPassantTarget = {-1, -1};
         return true;
     }
 
@@ -362,10 +344,15 @@ public:
                 if (p.color == turn) {
                     for (int x = 0; x < 8; ++x) {
                         for (int y = 0; y < 8; ++y) {
+                            // Skip if trying to move to same square
                             if (i == x && j == y) continue;
 
+                            // Create a temporary board
                             Board temp = *this;
+
+                            // Make the move on the temp board
                             if (temp.movePiece(i, j, x, y, turn)) {
+                                // If king is safe after this move, not stalemate
                                 if (!temp.isCheck(turn)) {
                                     return false;
                                 }
@@ -376,6 +363,7 @@ public:
             }
         }
 
+        // No legal moves left
         return true;
     }
 };
