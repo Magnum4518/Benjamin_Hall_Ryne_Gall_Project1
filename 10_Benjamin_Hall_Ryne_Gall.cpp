@@ -373,7 +373,7 @@ int main() {
         chessboard.display();
         if (chessboard.isCheckmate(turn))
         {
-            cout << "C H E C K M A T E " << (turn == WHITE ? "...Black" : "...White") << " wins.\n";
+            cout << "C H E C K M A T E " << (turn == WHITE ? "...Black" : "...White") << " wins!\n";
             break;
         }
         if (chessboard.isStalemate(turn))
